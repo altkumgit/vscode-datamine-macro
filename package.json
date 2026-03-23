@@ -2,8 +2,8 @@
     "name": "datamine-macro",
     "displayName": "Datamine Macro Language",
     "description": "Syntax highlighting, snippets and linter for Datamine Studio macro files (.mac)",
-    "version": "1.2.0",
-    "publisher": "altkumgit",
+    "version": "1.2.1",
+    "publisher": "atc-geo",
     "repository": {
         "type": "git",
         "url": "https://github.com/altkumgit/vscode-datamine-macro"

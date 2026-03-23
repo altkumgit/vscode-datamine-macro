@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+### Fixes
+- Fixed repository URL in package.json
+- Added CHANGELOG.md for Marketplace display
+
 ## 1.2.0
 ### Bug Fixes
 - **Config settings now respected**: `datamineMacro.linting.enabled` and `maxLineLength` are actually read
