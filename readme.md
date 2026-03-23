@@ -82,7 +82,7 @@ code --install-extension datamine-macro-1.2.0.vsix
 
 ### Development
 ```bash
-git clone https://github.com/YOUR_USERNAME/vscode-datamine-macro
+git clone https://github.com/altkumgit/vscode-datamine-macro
 cd vscode-datamine-macro
 # Press F5 in VS Code to launch Extension Development Host
 ```

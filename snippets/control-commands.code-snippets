@@ -1,0 +1,395 @@
+{
+    "Macro Start": {
+        "prefix": "!START",
+        "body": [
+            "!START ${1:MacroName}",
+            "\t$0",
+            "!END"
+        ],
+        "description": "Start/End a macro block. Name max 8 chars."
+    },
+
+    "Macro Start with params": {
+        "prefix": "!STARTp",
+        "body": [
+            "!START ${1:MacroName}",
+            "# Parameters",
+            "!SCREEN '${2:Screen title}'",
+            "\t*${3:INFILE}  = ${4:input file}",
+            "!END",
+            "",
+            "$0"
+        ],
+        "description": "Macro Start with SCREEN input dialog"
+    },
+
+    "IF simple": {
+        "prefix": "!IF",
+        "body": [
+            "!IF $${1:var}# ${2|EQ,NE,GT,LT,GE,LE|} ${3:value} !GOTO ${4:LABEL}"
+        ],
+        "description": "IF condition GOTO label. Simple one-line form."
+    },
+
+    "IF block": {
+        "prefix": "!IFb",
+        "body": [
+            "!IF $${1:var}# ${2|EQ,NE,GT,LT,GE,LE|} ${3:value}",
+            "\t$0",
+            "!ELSEIF $${1:var}# EQ ${4:value2}",
+            "\t",
+            "!ELSE",
+            "\t",
+            "!ENDIF"
+        ],
+        "description": "IF / ELSEIF / ELSE / ENDIF block"
+    },
+
+    "IF ELSE ENDIF": {
+        "prefix": "!IFelse",
+        "body": [
+            "!IF $${1:var}# ${2|EQ,NE,GT,LT,GE,LE|} ${3:value}",
+            "\t$0",
+            "!ELSE",
+            "\t",
+            "!ENDIF"
+        ],
+        "description": "IF / ELSE / ENDIF block"
+    },
+
+    "ELSEIF": {
+        "prefix": "!ELSEIF",
+        "body": [
+            "!ELSEIF $${1:var}# ${2|EQ,NE,GT,LT,GE,LE|} ${3:value}"
+        ],
+        "description": "ELSEIF condition in a block IF statement"
+    },
+
+    "ELSE": {
+        "prefix": "!ELSE",
+        "body": ["!ELSE"],
+        "description": "ELSE branch in IF block"
+    },
+
+    "ENDIF": {
+        "prefix": "!ENDIF",
+        "body": ["!ENDIF"],
+        "description": "End of IF block"
+    },
+
+    "GOTO": {
+        "prefix": "!GOTO",
+        "body": ["!GOTO ${1:LABEL}"],
+        "description": "Unconditional branch to a label. Label max 16 chars."
+    },
+
+    "GOSUB": {
+        "prefix": "!GOSUB",
+        "body": ["!GOSUB ${1:SUBROUTINE}"],
+        "description": "Call subroutine. Execution returns after !RETURN."
+    },
+
+    "RETURN": {
+        "prefix": "!RETURN",
+        "body": ["!RETURN"],
+        "description": "Return from GOSUB subroutine to calling point."
+    },
+
+    "BACKTO": {
+        "prefix": "!BACKTO",
+        "body": ["!BACKTO ${1:SCREEN_OR_LABEL}"],
+        "description": "Branch to a screen name or label (menu/macro)."
+    },
+
+    "Label definition": {
+        "prefix": "lbl",
+        "body": ["${1:LABEL}:"],
+        "description": "Define a label for GOTO/GOSUB. Max 16 chars, case-sensitive."
+    },
+
+    "LET assign": {
+        "prefix": "!LET",
+        "body": [
+            "!LET $${1:varname}# = ${2:value}"
+        ],
+        "description": "Set value of substitution variable. Supports arithmetic and functions."
+    },
+
+    "LET arithmetic": {
+        "prefix": "!LETa",
+        "body": [
+            "!LET $${1:result}# = $${2:var1}# ${3|+,-,*,/|} $${4:var2}#"
+        ],
+        "description": "LET with arithmetic expression"
+    },
+
+    "LET string concat": {
+        "prefix": "!LETc",
+        "body": [
+            "!LET $${1:result}# = '${2:prefix}' // $${3:var}#"
+        ],
+        "description": "LET string concatenation with //"
+    },
+
+    "ONERR": {
+        "prefix": "!ONERR",
+        "body": ["!ONERR ${1:ERROR_LABEL}"],
+        "description": "Transfer control to label if fatal error occurs."
+    },
+
+    "HOLD / NOHOLD": {
+        "prefix": "!HOLD",
+        "body": ["!HOLD"],
+        "description": "Stop macro exit on fatal error (continue despite errors)."
+    },
+
+    "NOHOLD": {
+        "prefix": "!NOHOLD",
+        "body": ["!NOHOLD"],
+        "description": "Exit macro on fatal error (default behaviour)."
+    },
+
+    "ECHO message": {
+        "prefix": "!ECHO",
+        "body": [
+            "!ECHO '${1:Message text}'"
+        ],
+        "description": "Display a message in the Command control bar."
+    },
+
+    "PROMPT message": {
+        "prefix": "!PROMPT",
+        "body": [
+            "!PROMPT '${1:Prompt message}'"
+        ],
+        "description": "Display prompt/message on screen during macro execution."
+    },
+
+    "PAUSE": {
+        "prefix": "!PAUSE",
+        "body": [
+            "!PAUSE @DELAY=${1:1}"
+        ],
+        "description": "Pause macro execution for a time proportional to @DELAY."
+    },
+
+    "INCLUDE": {
+        "prefix": "!INCLUDE",
+        "body": [
+            "!INCLUDE &in(${1:datafile}),*field1(${2:FIELD})"
+        ],
+        "description": "Incorporate records from a Datamine file as macro statement lines."
+    },
+
+    "FIELD check": {
+        "prefix": "!FIELD",
+        "body": [
+            "!FIELD &in(${1:file}),*field(${2:FIELDNAME}) !GOTO ${3:LABEL_IF_EXISTS}"
+        ],
+        "description": "Detect existence of a database field. Branches to label if found."
+    },
+
+    "FILE check": {
+        "prefix": "!FILE",
+        "body": [
+            "!FILE &in(${1:filename}) !GOTO ${2:LABEL_IF_EXISTS}"
+        ],
+        "description": "Detect existence of a database file. Branches to label if found."
+    },
+
+    "SYSFILE check": {
+        "prefix": "!SYSFILE",
+        "body": [
+            "!SYSFILE '${1:filename.txt}' !GOTO ${2:LABEL_IF_EXISTS}"
+        ],
+        "description": "Check if a system (text) file exists."
+    },
+
+    "VARINIT": {
+        "prefix": "!VARINIT",
+        "body": ["!VARINIT"],
+        "description": "Initialize (clear) all substitution variables at current macro level."
+    },
+
+    "VARLOAD": {
+        "prefix": "!VARLOAD",
+        "body": [
+            "!VARLOAD '${1:variables.txt}'"
+        ],
+        "description": "Read substitution variables from a text file."
+    },
+
+    "VARSAVE": {
+        "prefix": "!VARSAVE",
+        "body": [
+            "!VARSAVE '${1:variables.txt}'"
+        ],
+        "description": "Save substitution variables to a text file."
+    },
+
+    "STKPAR restore": {
+        "prefix": "!STKPAR",
+        "body": ["!STKPAR"],
+        "description": "Retrieve substitution variables from a system character format file."
+    },
+
+    "STKSAV save": {
+        "prefix": "!STKSAV",
+        "body": ["!STKSAV"],
+        "description": "Write substitution variables to a system character format file."
+    },
+
+    "KBON keyboard input": {
+        "prefix": "!KBON",
+        "body": ["!KBON"],
+        "description": "Toggle ON keyboard as data entry for running macro."
+    },
+
+    "KBOFF keyboard off": {
+        "prefix": "!KBOFF",
+        "body": ["!KBOFF"],
+        "description": "Toggle OFF keyboard input (after KBON)."
+    },
+
+    "SCROFF redirect output": {
+        "prefix": "!SCROFF",
+        "body": [
+            "!SCROFF '${1:output.txt}'"
+        ],
+        "description": "Divert screen text output to a file during macro execution."
+    },
+
+    "SCRON restore output": {
+        "prefix": "!SCRON",
+        "body": ["!SCRON"],
+        "description": "Restore screen output previously diverted by !SCROFF."
+    },
+
+    "RUNPROG external": {
+        "prefix": "!RUNPROG",
+        "body": [
+            "!RUNPROG '${1:program.exe}' '${2:arguments}'"
+        ],
+        "description": "Run an external program or batch file from a macro."
+    },
+
+    "OPSYS OS command": {
+        "prefix": "!OPSYS",
+        "body": [
+            "!OPSYS '${1:os command}'"
+        ],
+        "description": "Execute an operating system command from within a macro."
+    },
+
+    "XRUN run macro": {
+        "prefix": "!XRUN",
+        "body": [
+            "!XRUN '${1:macro_file.mac}'"
+        ],
+        "description": "Run a macro or menu file."
+    },
+
+    "NOXRUN syntax check": {
+        "prefix": "!NOXRUN",
+        "body": [
+            "!NOXRUN '${1:macro_file.mac}'"
+        ],
+        "description": "Check macro syntax without executing it."
+    },
+
+    "MDEBUG debug": {
+        "prefix": "!MDEBUG",
+        "body": ["!MDEBUG"],
+        "description": "Interactively debug macros and menus."
+    },
+
+    "LOCDBOFF remote mode": {
+        "prefix": "!LOCDBOFF",
+        "body": ["!LOCDBOFF"],
+        "description": "Remote mode: files can be inside or outside project folder (default)."
+    },
+
+    "LOCDBON local mode": {
+        "prefix": "!LOCDBON",
+        "body": ["!LOCDBON"],
+        "description": "Local mode: all file references must be within current project folder."
+    },
+
+    "SCREEN user input": {
+        "prefix": "!SCREEN",
+        "body": [
+            "!SCREEN '${1:Dialog title}'",
+            "\t*${2:INFILE}  = ${3:Input file}",
+            "\t*${4:OUTFILE} = ${5:Output file}"
+        ],
+        "description": "Display user input dialog in a macro."
+    },
+
+    "REM comment": {
+        "prefix": "!REM",
+        "body": ["!REM ${1:comment text}"],
+        "description": "Add a comment in a macro (alternative to # prefix)."
+    },
+
+    "Full macro template": {
+        "prefix": "macrotemplate",
+        "body": [
+            "# ============================================================",
+            "# Macro: ${1:MacroName}",
+            "# Description: ${2:Purpose of this macro}",
+            "# Author: ${3:Your name}",
+            "# Date: ${4:YYYY-MM-DD}",
+            "# ============================================================",
+            "!START ${1:MacroName}",
+            "",
+            "# --- Input parameters ---",
+            "!SCREEN 'Parameters for ${1:MacroName}'",
+            "\t*INFILE  = Input file name",
+            "\t*OUTFILE = Output file name",
+            "",
+            "# --- Check input file exists ---",
+            "!FILE &in(INFILE) !GOTO FILE_OK",
+            "!ECHO 'ERROR: Input file not found'",
+            "!GOTO FINISH",
+            "",
+            "FILE_OK:",
+            "\t$0",
+            "",
+            "FINISH:",
+            "!END"
+        ],
+        "description": "Full macro template with header, parameters, file check, error handling"
+    },
+
+    "Error handler template": {
+        "prefix": "errhandler",
+        "body": [
+            "!ONERR ${1:ERR_HANDLER}",
+            "",
+            "$0",
+            "",
+            "${1:ERR_HANDLER}:",
+            "!ECHO 'ERROR occurred - check log'",
+            "!GOTO FINISH"
+        ],
+        "description": "Error handler pattern with ONERR"
+    },
+
+    "Loop with counter": {
+        "prefix": "loopcount",
+        "body": [
+            "!LET $${1:counter}# = 0",
+            "!LET $${2:max}# = ${3:10}",
+            "",
+            "LOOP_START:",
+            "!IF $${1:counter}# GE $${2:max}# !GOTO LOOP_END",
+            "",
+            "\t$0",
+            "",
+            "\t!LET $${1:counter}# = $${1:counter}# + 1",
+            "!GOTO LOOP_START",
+            "LOOP_END:"
+        ],
+        "description": "Counter-based loop pattern"
+    }
+}

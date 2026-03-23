@@ -1,0 +1,139 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Datamine Macro",
+    "scopeName": "source.datamine-macro",
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#control_keywords" },
+        { "include": "#switch_commands" },
+        { "include": "#labels" },
+        { "include": "#file_params" },
+        { "include": "#field_params" },
+        { "include": "#numeric_params" },
+        { "include": "#variables" },
+        { "include": "#process_names" },
+        { "include": "#strings" },
+        { "include": "#numbers" }
+    ],
+    "repository": {
+
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.hash.datamine-macro",
+                    "match": "(^\\s*#.*|(?<=\\s)#.*)"
+                },
+                {
+                    "name": "comment.line.rem.datamine-macro",
+                    "match": "(?i)^\\s*!REM\\b.*"
+                }
+            ]
+        },
+
+        "control_keywords": {
+            "comment": "Macro control flow commands - highlighted as keywords",
+            "patterns": [
+                {
+                    "name": "keyword.control.datamine-macro",
+                    "match": "(?i)^\\s*!(START|END|IF|ELSE|ELSEIF|ENDIF|GOTO|GOSUB|RETURN|BACKTO|ONERR|HOLD|NOHOLD|PAUSE|INCLUDE|VARINIT|VARLOAD|VARSAVE|STKPAR|STKSAV|SYSFILE|FIELD|FILE|KBON|KBOFF|SCROFF|SCRON|MDEBUG|NOXRUN|NOMENU|XRUN|RUNPROG|OPSYS|LOADCF|MENU|MACST|MACEND|ECHO|PROMPT|LOCDBON|LOCDBOFF|SETENV|SYSPAR|SCREEN)\\b"
+                }
+            ]
+        },
+
+        "switch_commands": {
+            "comment": "!LET and !SET variable assignment",
+            "patterns": [
+                {
+                    "name": "keyword.operator.assignment.datamine-macro",
+                    "match": "(?i)^\\s*!(LET|SET|SETVAL)\\b"
+                }
+            ]
+        },
+
+        "labels": {
+            "comment": "Jump labels like MYLABEL:",
+            "patterns": [
+                {
+                    "name": "entity.name.label.datamine-macro",
+                    "match": "^\\s*([A-Za-z][A-Za-z0-9_]{0,15})\\s*:"
+                }
+            ]
+        },
+
+        "file_params": {
+            "comment": "File parameters: &in(), &out(), &in1() etc.",
+            "patterns": [
+                {
+                    "name": "support.variable.file.datamine-macro",
+                    "match": "&[A-Za-z][A-Za-z0-9_]*(?=\\()"
+                }
+            ]
+        },
+
+        "field_params": {
+            "comment": "Field parameters: *field()",
+            "patterns": [
+                {
+                    "name": "variable.parameter.field.datamine-macro",
+                    "match": "\\*[A-Za-z][A-Za-z0-9_]*(?=\\()"
+                }
+            ]
+        },
+
+        "numeric_params": {
+            "comment": "Numeric/option parameters: @param=value",
+            "patterns": [
+                {
+                    "name": "entity.name.function.datamine-macro",
+                    "match": "@[A-Za-z][A-Za-z0-9_]*"
+                }
+            ]
+        },
+
+        "variables": {
+            "comment": "Substitution variables $varname#",
+            "patterns": [
+                {
+                    "name": "variable.other.substitution.datamine-macro",
+                    "match": "\\$[A-Za-z][A-Za-z0-9_]*#"
+                }
+            ]
+        },
+
+        "process_names": {
+            "comment": "Process names starting with ! that are not control commands",
+            "patterns": [
+                {
+                    "name": "entity.name.class.process.datamine-macro",
+                    "match": "(?i)^\\s*![A-Za-z][A-Za-z0-9]{1,7}\\b"
+                }
+            ]
+        },
+
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.single.datamine-macro",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": []
+                },
+                {
+                    "name": "string.quoted.double.datamine-macro",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": []
+                }
+            ]
+        },
+
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.datamine-macro",
+                    "match": "(?<=[=(,])\\s*-?[0-9]+(\\.[0-9]*)?"
+                }
+            ]
+        }
+    }
+}
