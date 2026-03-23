@@ -1,0 +1,91 @@
+# Test macro with intentional errors for linter v1.2 demo
+# =====================================================
+
+# ── 1. Macro name > 8 chars ──
+!START LONGNAME9
+!END
+
+# ── 2. Nested !START ──
+!START TestMac
+  !START Nested1
+  !END
+
+# ── 3. Line length > 80 chars (even comments now!) ──
+# This comment line is intentionally longer than eighty characters to trigger the warning!!!!!
+
+# ── 4. Variable name > 16 chars ──
+!LET $thisVarNameIsTooLong# = 1
+
+# ── 5. !ENDIF without !IF (appears before any open !IF) ──
+!ENDIF
+
+# ── 6. Unclosed !IF block (no !ENDIF follows) ──
+!IF $counter# EQ 0
+    !ECHO 'inside if'
+
+# ── 7. !ELSEIF without !IF ──
+!ELSEIF $x# EQ 1
+
+# ── 8. Empty !IF block ──
+!IF $x# EQ 0
+!ENDIF
+
+# ── 9. GOTO to undefined label ──
+!IF $counter# GE 10 !GOTO DOES_NOT_EXIST
+
+# ── 10. GOSUB to undefined label ──
+!GOSUB MYSTERY_SUB
+
+# ── 11. Unbalanced parentheses ──
+!COPY &in(file1,&out(file2)
+
+# ── 12. # inside string (should NOT be treated as comment) ──
+!ECHO 'Value is #1 priority'
+
+# ── 13. Variable used before !LET ──
+!ECHO $EARLY_VAR#
+!LET $EARLY_VAR# = 100
+
+# ── 14. Undefined variable (never !LET) ──
+!ECHO $NEVER_DEFINED#
+
+# ── 15. Unused variable ──
+!LET $UNUSED_VAR# = 42
+
+# ── 16. Duplicate labels ──
+DUPED:
+  !ECHO 'first'
+DUPED:
+  !ECHO 'second'
+
+# ── 17. Unused label ──
+NEVER_USED:
+  !ECHO 'nobody jumps here'
+
+# ── 18. Duplicate !ONERR ──
+!ONERR ERR1
+!ONERR ERR2
+
+# ── 19. !GOSUB to label without !RETURN ──
+!GOSUB NO_RETURN_SUB
+!GOTO SKIP_SUBS
+
+NO_RETURN_SUB:
+  !ECHO 'I forgot to return'
+  # no !RETURN here
+
+# ── 20. !RETURN outside subroutine ──
+SKIP_SUBS:
+!RETURN
+
+# ── 21. Unreachable code after !GOTO ──
+!GOTO FINISH
+!ECHO 'You will never see this'
+
+# ── 22. Label name > 16 in GOTO target ──
+!GOTO THISLABELISWAYTOOLONG
+
+FINISH:
+ERR1:
+ERR2:
+!END

@@ -1,0 +1,66 @@
+{
+    "name": "datamine-macro",
+    "displayName": "Datamine Macro Language",
+    "description": "Syntax highlighting, snippets and linter for Datamine Studio macro files (.mac)",
+    "version": "1.2.0",
+    "publisher": "kumtor-geo",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/YOUR_USERNAME/vscode-datamine-macro"
+    },
+    "license": "MIT",
+    "icon": "icon.png",
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Snippets",
+        "Linters"
+    ],
+    "keywords": [
+        "datamine", "macro", "mining", "geology", ".mac", "datamine studio"
+    ],
+    "main": "./extension.js",
+    "activationEvents": [
+        "onLanguage:datamine-macro"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "datamine-macro",
+            "aliases": ["Datamine Macro", "dm-macro"],
+            "extensions": [".mac"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "datamine-macro",
+            "scopeName": "source.datamine-macro",
+            "path": "./syntaxes/datamine-macro.tmLanguage.json"
+        }],
+        "snippets": [
+            {
+                "language": "datamine-macro",
+                "path": "./snippets/control-commands.code-snippets"
+            },
+            {
+                "language": "datamine-macro",
+                "path": "./snippets/processes.code-snippets"
+            }
+        ],
+        "configuration": {
+            "title": "Datamine Macro",
+            "properties": {
+                "datamineMacro.linting.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable/disable Datamine macro linting"
+                },
+                "datamineMacro.linting.maxLineLength": {
+                    "type": "number",
+                    "default": 80,
+                    "description": "Maximum line length (Datamine limit is 80)"
+                }
+            }
+        }
+    }
+}
