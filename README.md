@@ -4,6 +4,20 @@ Full language support for **Datamine Studio** macro files (`.mac`).
 
 ## Features
 
+### Go to Definition (Ctrl+Click)
+- Click on a label in `!GOTO LABEL` / `!GOSUB LABEL` — jumps to `LABEL:` definition
+- Click on `$varname#` — jumps to its `!LET` / `!SETVAL` definition
+
+### Document Symbols (Outline)
+- **Outline panel** shows macro structure: `!START` blocks, labels, variables
+- **Breadcrumbs** navigation — see which macro/label section you're in
+- Hierarchical: labels and variables nested under their parent `!START`
+
+### Hover Info
+- Hover on any **process** (`!SELCOP`, `!ESTIMA`, etc.) — shows description and syntax example
+- Hover on **`$variable#`** — shows where it's defined
+- Hover on **label reference** — shows target line number
+
 ### Syntax Highlighting
 - ✅ Control commands (`!START`, `!END`, `!IF`, `!ELSE`, `!GOTO`, `!LET`, `!SCREEN`, etc.)
 - ✅ File parameters (`&in()`, `&out()`, `&in1()`)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+### New Features
+- **Go to Definition** — Ctrl+Click on label in `!GOTO`/`!GOSUB` jumps to `LABEL:` definition; Ctrl+Click on `$var#` jumps to its `!LET`/`!SETVAL`
+- **Document Symbols** — Outline panel shows macros (`!START`), labels, and variables with hierarchy; Breadcrumbs navigation
+- **Hover Info** — Hover on any `!PROCESS` shows description and syntax example from built-in snippets; hover on `$var#` shows definition line; hover on label shows target line
+
 ## 1.2.1
 ### Fixes
 - Fixed repository URL in package.json

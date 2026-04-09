@@ -1,12 +1,304 @@
 // Datamine Macro Language Extension
-// Linter / Diagnostic Provider — v1.2.0
+// Linter + Go to Definition + Document Symbols + Hover — v1.3.0
 
 const vscode = require('vscode');
+const path = require('path');
+const fs = require('fs');
+
+const LANG_ID = 'datamine-macro';
+const LANG_SELECTOR = { language: LANG_ID, scheme: 'file' };
 
 /** @type {vscode.DiagnosticCollection} */
 let diagnosticCollection;
 
+// ── Process descriptions loaded from snippets ────────────────────────────────
+/** @type {Map<string, {description: string, body: string}>} */
+let processInfo = new Map();
+
+/**
+ * Load process/control snippet descriptions for Hover provider
+ */
+function loadSnippetDescriptions(extensionPath) {
+    const snippetFiles = [
+        path.join(extensionPath, 'snippets', 'processes.code-snippets'),
+        path.join(extensionPath, 'snippets', 'control-commands.code-snippets')
+    ];
+    for (const file of snippetFiles) {
+        try {
+            // Strip JS-style comments (// ...) before parsing
+            const raw = fs.readFileSync(file, 'utf8');
+            const cleaned = raw.replace(/^\s*\/\/.*$/gm, '');
+            const json = JSON.parse(cleaned);
+            for (const [, snippet] of Object.entries(json)) {
+                if (!snippet.prefix) continue;
+                const prefix = snippet.prefix.replace(/^!/, '').toUpperCase();
+                const desc = Array.isArray(snippet.description)
+                    ? snippet.description.join(' ').trim()
+                    : (snippet.description || '').trim();
+                const body = Array.isArray(snippet.body)
+                    ? snippet.body.join('\n')
+                    : (snippet.body || '');
+                // Keep first entry (most complete) if duplicate prefix
+                if (!processInfo.has(prefix)) {
+                    processInfo.set(prefix, { description: desc, body });
+                }
+            }
+        } catch (e) {
+            // Silently ignore — snippets are optional for hover
+        }
+    }
+}
+
+// ── Document parsing (shared by all providers) ───────────────────────────────
+/**
+ * Parse a document and return labels, variables, macros
+ * @param {vscode.TextDocument} document
+ */
+function parseDocument(document) {
+    const labels = new Map();    // name(upper) -> {line, col, name}
+    const variables = new Map(); // name(upper) -> {line, col, name}
+    const macros = [];           // [{name, startLine, endLine}]
+
+    const macroStack = [];
+    const lines = document.getText().split('\n');
+
+    for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i];
+        const trimmed = raw.trim();
+        if (!trimmed) continue;
+
+        // Labels: MYLABEL:
+        const labelMatch = trimmed.match(/^([A-Za-z][A-Za-z0-9_]*)\s*:\s*$/);
+        if (labelMatch) {
+            const name = labelMatch[1];
+            const col = raw.indexOf(name);
+            if (!labels.has(name.toUpperCase())) {
+                labels.set(name.toUpperCase(), { line: i, col, name });
+            }
+        }
+
+        // !LET $var# = ...
+        const letMatch = trimmed.match(/^!LET\s+\$([A-Za-z][A-Za-z0-9_]*)#/i);
+        if (letMatch) {
+            const name = letMatch[1];
+            const col = raw.indexOf('$' + name);
+            if (!variables.has(name.toUpperCase())) {
+                variables.set(name.toUpperCase(), { line: i, col, name });
+            }
+        }
+
+        // !SETVAL $var# = ...
+        const setMatch = trimmed.match(/^!SETVAL\s+\$([A-Za-z][A-Za-z0-9_]*)#/i);
+        if (setMatch) {
+            const name = setMatch[1];
+            const col = raw.indexOf('$' + name);
+            if (!variables.has(name.toUpperCase())) {
+                variables.set(name.toUpperCase(), { line: i, col, name });
+            }
+        }
+
+        // !START MacroName
+        const startMatch = trimmed.match(/^!START\s+([A-Za-z0-9_]+)/i);
+        if (startMatch) {
+            macroStack.push({ name: startMatch[1], startLine: i, endLine: i });
+        }
+
+        // !END
+        if (/^!END\b/i.test(trimmed)) {
+            if (macroStack.length > 0) {
+                const m = macroStack.pop();
+                m.endLine = i;
+                macros.push(m);
+            }
+        }
+    }
+    // Unclosed macros
+    for (const m of macroStack) {
+        m.endLine = lines.length - 1;
+        macros.push(m);
+    }
+
+    return { labels, variables, macros };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  PROVIDERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Go to Definition ─────────────────────────────────────────────────────────
+const definitionProvider = {
+    provideDefinition(document, position) {
+        const wordRange = document.getWordRangeAtPosition(position, /[A-Za-z][A-Za-z0-9_]*/);
+        if (!wordRange) return null;
+
+        const word = document.getText(wordRange);
+        const lineText = document.lineAt(position.line).text;
+        const charBefore = wordRange.start.character > 0
+            ? lineText[wordRange.start.character - 1] : '';
+        const charAfter = wordRange.end.character < lineText.length
+            ? lineText[wordRange.end.character] : '';
+
+        const { labels, variables } = parseDocument(document);
+
+        // Variable: $varname#
+        if (charBefore === '$' && charAfter === '#') {
+            const info = variables.get(word.toUpperCase());
+            if (info) {
+                return new vscode.Location(document.uri,
+                    new vscode.Position(info.line, info.col));
+            }
+            return null;
+        }
+
+        // Label: used in !GOTO LABEL, !GOSUB LABEL, !ONERR LABEL, !BACKTO LABEL
+        // or after !IF ... !GOTO LABEL
+        if (/!(GOTO|GOSUB|ONERR|BACKTO)\s/i.test(lineText)) {
+            const info = labels.get(word.toUpperCase());
+            if (info) {
+                return new vscode.Location(document.uri,
+                    new vscode.Position(info.line, info.col));
+            }
+        }
+
+        return null;
+    }
+};
+
+// ── Document Symbols (Outline + Breadcrumbs) ─────────────────────────────────
+const symbolProvider = {
+    provideDocumentSymbols(document) {
+        const { labels, variables, macros } = parseDocument(document);
+        const symbols = [];
+
+        // Macros as top-level modules
+        for (const m of macros) {
+            const range = new vscode.Range(m.startLine, 0,
+                m.endLine, document.lineAt(m.endLine).text.length);
+            const sym = new vscode.DocumentSymbol(
+                m.name,
+                'macro',
+                vscode.SymbolKind.Module,
+                range, range
+            );
+
+            // Labels inside this macro as children
+            for (const [, info] of labels) {
+                if (info.line > m.startLine && info.line < m.endLine) {
+                    const labelRange = new vscode.Range(info.line, 0,
+                        info.line, document.lineAt(info.line).text.length);
+                    sym.children.push(new vscode.DocumentSymbol(
+                        info.name + ':',
+                        'label',
+                        vscode.SymbolKind.Key,
+                        labelRange, labelRange
+                    ));
+                }
+            }
+
+            // Variables inside this macro as children
+            for (const [, info] of variables) {
+                if (info.line > m.startLine && info.line < m.endLine) {
+                    const varRange = new vscode.Range(info.line, info.col,
+                        info.line, info.col + info.name.length + 2);
+                    sym.children.push(new vscode.DocumentSymbol(
+                        '$' + info.name + '#',
+                        'variable',
+                        vscode.SymbolKind.Variable,
+                        varRange, varRange
+                    ));
+                }
+            }
+
+            symbols.push(sym);
+        }
+
+        // Labels outside any macro (shouldn't happen normally, but just in case)
+        for (const [, info] of labels) {
+            const insideMacro = macros.some(m => info.line > m.startLine && info.line < m.endLine);
+            if (!insideMacro) {
+                const r = new vscode.Range(info.line, 0,
+                    info.line, document.lineAt(info.line).text.length);
+                symbols.push(new vscode.DocumentSymbol(
+                    info.name + ':',
+                    'label',
+                    vscode.SymbolKind.Key,
+                    r, r
+                ));
+            }
+        }
+
+        return symbols;
+    }
+};
+
+// ── Hover Provider ───────────────────────────────────────────────────────────
+const hoverProvider = {
+    provideHover(document, position) {
+        const lineText = document.lineAt(position.line).text;
+
+        // 1. Hover on process/command: !SELCOP, !IF, !LET etc.
+        const cmdRange = document.getWordRangeAtPosition(position, /![A-Za-z][A-Za-z0-9]*/);
+        if (cmdRange) {
+            const cmd = document.getText(cmdRange);
+            const name = cmd.replace(/^!/, '').toUpperCase();
+            const info = processInfo.get(name);
+            if (info) {
+                const md = new vscode.MarkdownString();
+                md.appendMarkdown(`**!${name}**\n\n`);
+                md.appendMarkdown(info.description + '\n\n');
+                // Show snippet body as syntax example
+                const example = info.body
+                    .replace(/\$\{\d+(?:\|[^}]*\||\:[^}]*)?\}/g, (m) => {
+                        // Extract default or placeholder from ${1:default} or ${1|a,b|}
+                        const def = m.match(/\$\{\d+:([^}]*)\}/);
+                        if (def) return def[1];
+                        const opts = m.match(/\$\{\d+\|([^}]*)\|?\}/);
+                        if (opts) return opts[1].split(',')[0];
+                        return '…';
+                    })
+                    .replace(/\$\d+/g, '…');
+                md.appendCodeblock(example, 'datamine-macro');
+                return new vscode.Hover(md, cmdRange);
+            }
+        }
+
+        // 2. Hover on variable $var# — show definition line
+        const varRange = document.getWordRangeAtPosition(position, /\$[A-Za-z][A-Za-z0-9_]*#/);
+        if (varRange) {
+            const varText = document.getText(varRange);
+            const varName = varText.replace(/^\$/, '').replace(/#$/, '').toUpperCase();
+            const { variables } = parseDocument(document);
+            const info = variables.get(varName);
+            if (info) {
+                const defLine = document.lineAt(info.line).text.trim();
+                const md = new vscode.MarkdownString();
+                md.appendMarkdown(`**\$${info.name}#** — defined on line ${info.line + 1}\n\n`);
+                md.appendCodeblock(defLine, 'datamine-macro');
+                return new vscode.Hover(md, varRange);
+            }
+        }
+
+        // 3. Hover on label reference
+        const wordRange = document.getWordRangeAtPosition(position, /[A-Za-z][A-Za-z0-9_]*/);
+        if (wordRange && /!(GOTO|GOSUB|ONERR|BACKTO)\s/i.test(lineText)) {
+            const word = document.getText(wordRange);
+            const { labels } = parseDocument(document);
+            const info = labels.get(word.toUpperCase());
+            if (info) {
+                const md = new vscode.MarkdownString();
+                md.appendMarkdown(`**${info.name}:** — label on line ${info.line + 1}`);
+                return new vscode.Hover(md, wordRange);
+            }
+        }
+
+        return null;
+    }
+};
+
 function activate(context) {
+    // Load snippet descriptions for hover
+    loadSnippetDescriptions(context.extensionPath);
+
     diagnosticCollection = vscode.languages.createDiagnosticCollection('datamine-macro');
     context.subscriptions.push(diagnosticCollection);
 
@@ -36,6 +328,17 @@ function activate(context) {
         vscode.workspace.onDidCloseTextDocument(doc => {
             diagnosticCollection.delete(doc.uri);
         })
+    );
+
+    // ── Register providers ───────────────────────────────────────────────
+    context.subscriptions.push(
+        vscode.languages.registerDefinitionProvider(LANG_SELECTOR, definitionProvider)
+    );
+    context.subscriptions.push(
+        vscode.languages.registerDocumentSymbolProvider(LANG_SELECTOR, symbolProvider)
+    );
+    context.subscriptions.push(
+        vscode.languages.registerHoverProvider(LANG_SELECTOR, hoverProvider)
     );
 }
 

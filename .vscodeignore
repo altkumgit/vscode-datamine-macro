@@ -1,0 +1,5 @@
+.git/**
+.gitignore
+.vscodeignore
+*.vsix
+test_errors.mac
